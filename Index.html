@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>엑셀 비교 도구</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+:root {
+–bg-0: #0a0c12;
+–bg-1: #0f1117;
+–bg-2: #161922;
+–bg-3: #1e2230;
+–border: #2a2f42;
+–border-bright: #3d4460;
+–text-primary: #e8eaf0;
+–text-secondary: #8892a4;
+–text-muted: #4a5268;
+–accent: #4f9eff;
+–accent-dim: #1a3a6e;
+–accent-glow: rgba(79,158,255,0.15);
+–green: #3ecf8e;
+–green-dim: #0e3d28;
+–yellow: #f5c842;
+–yellow-bg: #2a2200;
+–yellow-cell: #fff9c4;
+–red: #ff5e6c;
+–radius: 8px;
+–radius-lg: 12px;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+font-family: ‘Noto Sans KR’, sans-serif;
+background: var(–bg-0);
+color: var(–text-primary);
+min-height: 100vh;
+font-size: 14px;
+line-height: 1.6;
+}
+
+/* ── Header ── */
+header {
+background: var(–bg-1);
+border-bottom: 1px solid var(–border);
+padding: 18px 28px;
+display: flex;
+align-items: center;
+gap: 14px;
+position: sticky;
+top: 0;
+z-index: 100;
+}
+.logo-icon {
+width: 34px; height: 34px;
+background: linear-gradient(135deg, var(–accent), #1e6fd4);
+border-radius: 8px;
+display: flex; align-items: center; justify-content: center;
+font-size: 16px;
+box-shadow: 0 0 18px rgba(79,158,255,0.35);
+}
+header h1 {
+font-size: 16px;
+font-weight: 700;
+letter-spacing: -0.3px;
+}
+header .subtitle {
+font-size: 11px;
+color: var(–text-muted);
+font-family: ‘JetBrains Mono’, monospace;
+margin-left: auto;
+}
+
+/* ── Main ── */
+main { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+
+/* ── Upload Section ── */
+.upload-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 16px;
+margin-bottom: 20px;
+}
+@media (max-width: 640px) { .upload-grid { grid-template-columns: 1fr; } }
+
+.upload-card {
+background: var(–bg-2);
+border: 1.5px dashed var(–border-bright);
+border-radius: var(–radius-lg);
+padding: 28px 20px;
+text-align: center;
+cursor: pointer;
+transition: border-color .2s, background .2s, box-shadow .2s;
+position: relative;
+}
+.upload-card:hover, .upload-card.dragover {
+border-color: var(–accent);
+background: var(–bg-3);
+box-shadow: 0 0 20px var(–accent-glow);
+}
+.upload-card.has-file {
+border-color: var(–green);
+border-style: solid;
+box-shadow: 0 0 16px rgba(62,207,142,0.12);
+}
+.upload-card input[type=“file”] {
+position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.upload-icon { font-size: 28px; margin-bottom: 10px; }
+.upload-label {
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: var(–accent);
+margin-bottom: 4px;
+font-family: ‘JetBrains Mono’, monospace;
+}
+.upload-desc { font-size: 12px; color: var(–text-muted); }
+.file-name {
+margin-top: 10px;
+font-size: 12px;
+color: var(–green);
+font-family: ‘JetBrains Mono’, monospace;
+word-break: break-all;
+display: none;
+}
+.upload-card.has-file .file-name { display: block; }
+.upload-card.has-file .upload-desc { display: none; }
+
+/* ── Action Bar ── */
+.action-bar {
+display: flex;
+gap: 10px;
+margin-bottom: 24px;
+flex-wrap: wrap;
+}
+
+.btn {
+padding: 10px 22px;
+border-radius: var(–radius);
+border: none;
+font-family: ‘Noto Sans KR’, sans-serif;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: all .2s;
+display: inline-flex;
+align-items: center;
+gap: 6px;
+white-space: nowrap;
+}
+.btn-primary {
+background: linear-gradient(135deg, var(–accent), #1e6fd4);
+color: #fff;
+box-shadow: 0 4px 14px rgba(79,158,255,0.3);
+}
+.btn-primary:hover:not(:disabled) {
+transform: translateY(-1px);
+box-shadow: 0 6px 20px rgba(79,158,255,0.45);
+}
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+background: var(–bg-3);
+color: var(–text-secondary);
+border: 1px solid var(–border-bright);
+}
+.btn-secondary:hover:not(:disabled) {
+background: var(–border);
+color: var(–text-primary);
+}
+.btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-download {
+background: var(–green-dim);
+color: var(–green);
+border: 1px solid var(–green);
+}
+.btn-download:hover:not(:disabled) {
+background: rgba(62,207,142,0.2);
+box-shadow: 0 0 14px rgba(62,207,142,0.2);
+}
+.btn-download:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Status Messages ── */
+.status-bar {
+padding: 12px 16px;
+border-radius: var(–radius);
+margin-bottom: 20px;
+font-size: 13px;
+display: none;
+align-items: center;
+gap: 8px;
+}
+.status-bar.loading {
+display: flex;
+background: var(–accent-dim);
+border: 1px solid var(–accent);
+color: var(–accent);
+}
+.status-bar.no-change {
+display: flex;
+background: var(–bg-3);
+border: 1px solid var(–border-bright);
+color: var(–text-secondary);
+}
+.status-bar.has-change {
+display: flex;
+background: var(–yellow-bg);
+border: 1px solid var(–yellow);
+color: var(–yellow);
+}
+.spinner {
+width: 14px; height: 14px;
+border: 2px solid rgba(79,158,255,0.3);
+border-top-color: var(–accent);
+border-radius: 50%;
+animation: spin .7s linear infinite;
+flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Summary Stats ── */
+.stats-bar {
+display: flex;
+gap: 12px;
+margin-bottom: 16px;
+flex-wrap: wrap;
+}
+.stat-chip {
+padding: 6px 14px;
+border-radius: 20px;
+font-size: 12px;
+font-weight: 600;
+font-family: ‘JetBrains Mono’, monospace;
+display: inline-flex;
+align-items: center;
+gap: 6px;
+}
+.stat-added { background: rgba(245,200,66,0.15); border: 1px solid var(–yellow); color: var(–yellow); }
+.stat-changed { background: rgba(79,158,255,0.12); border: 1px solid var(–accent); color: var(–accent); }
+
+/* ── Table ── */
+.table-wrapper {
+background: var(–bg-2);
+border: 1px solid var(–border);
+border-radius: var(–radius-lg);
+overflow: hidden;
+}
+.table-scroll {
+max-height: 60vh;
+overflow: auto;
+}
+/* scrollbar */
+.table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-scroll::-webkit-scrollbar-track { background: var(–bg-2); }
+.table-scroll::-webkit-scrollbar-thumb { background: var(–border-bright); border-radius: 3px; }
+
+table {
+width: 100%;
+border-collapse: collapse;
+font-size: 13px;
+}
+thead tr {
+background: var(–bg-3);
+position: sticky;
+top: 0;
+z-index: 10;
+}
+th {
+padding: 11px 14px;
+text-align: left;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 0.8px;
+text-transform: uppercase;
+color: var(–text-muted);
+border-bottom: 1px solid var(–border-bright);
+white-space: nowrap;
+font-family: ‘JetBrains Mono’, monospace;
+}
+th:first-child { color: var(–text-secondary); }
+
+td {
+padding: 9px 14px;
+border-bottom: 1px solid var(–border);
+vertical-align: top;
+color: var(–text-primary);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Status badge */
+.badge {
+display: inline-flex;
+align-items: center;
+padding: 2px 10px;
+border-radius: 12px;
+font-size: 11px;
+font-weight: 700;
+font-family: ‘JetBrains Mono’, monospace;
+white-space: nowrap;
+}
+.badge-added { background: rgba(245,200,66,0.18); color: var(–yellow); border: 1px solid rgba(245,200,66,0.4); }
+.badge-changed { background: rgba(79,158,255,0.14); color: var(–accent); border: 1px solid rgba(79,158,255,0.35); }
+
+/* Highlighted cells */
+td.cell-highlight {
+background: rgba(255,249,196,0.12) !important;
+color: #ffe066;
+font-weight: 500;
+}
+tr.row-added td { background: rgba(245,200,66,0.06); }
+tr.row-added td.cell-highlight { background: rgba(245,200,66,0.14) !important; }
+
+/* ── Footer ── */
+footer {
+text-align: center;
+padding: 24px;
+color: var(–text-muted);
+font-size: 11px;
+font-family: ‘JetBrains Mono’, monospace;
+border-top: 1px solid var(–border);
+margin-top: 40px;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">📊</div>
+  <div>
+    <h1>엑셀 비교 도구</h1>
+  </div>
+  <div class="subtitle">Excel Diff Tool v1.0</div>
+</header>
+
+<main>
+  <!-- Upload -->
+  <div class="upload-grid">
+    <div class="upload-card" id="drop1" onclick="document.getElementById('file1').click()">
+      <input type="file" id="file1" accept=".xlsx,.xls" onchange="handleFile(1, this)">
+      <div class="upload-icon">📄</div>
+      <div class="upload-label">원본 파일</div>
+      <div class="upload-desc">.xlsx / .xls<br>클릭 또는 드래그앤드롭</div>
+      <div class="file-name" id="name1"></div>
+    </div>
+
+```
+<div class="upload-card" id="drop2" onclick="document.getElementById('file2').click()">
+  <input type="file" id="file2" accept=".xlsx,.xls" onchange="handleFile(2, this)">
+  <div class="upload-icon">📋</div>
+  <div class="upload-label">비교 대상 파일</div>
+  <div class="upload-desc">.xlsx / .xls<br>클릭 또는 드래그앤드롭</div>
+  <div class="file-name" id="name2"></div>
+</div>
+```
+
+  </div>
+
+  <!-- Actions -->
+
+  <div class="action-bar">
+    <button class="btn btn-primary" id="btnCompare" onclick="runCompare()" disabled>
+      ▶ 비교 시작
+    </button>
+    <button class="btn btn-download" id="btnDownload" onclick="downloadResult()" disabled>
+      ⬇ 결과 다운로드
+    </button>
+    <button class="btn btn-secondary" onclick="resetAll()">↺ 초기화</button>
+  </div>
+
+  <!-- Status -->
+
+  <div class="status-bar" id="statusBar">
+    <div class="spinner" id="spinner" style="display:none"></div>
+    <span id="statusMsg"></span>
+  </div>
+
+  <!-- Stats -->
+
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <span class="stat-chip stat-added" id="statAdded"></span>
+    <span class="stat-chip stat-changed" id="statChanged"></span>
+  </div>
+
+  <!-- Result Table -->
+
+  <div class="table-wrapper" id="tableWrapper" style="display:none">
+    <div class="table-scroll">
+      <table id="resultTable"></table>
+    </div>
+  </div>
+</main>
+
+<footer>Doosan Enerbility · Sourcing Team · Excel Diff Tool</footer>
+
+<script>
+  // ── State ──
+  let data1 = null, data2 = null;
+  let compareResult = null;
+
+  // ── File Handling ──
+  function handleFile(num, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (num === 1) data1 = rows;
+      else data2 = rows;
+
+      document.getElementById('name' + num).textContent = '✓ ' + file.name;
+      document.getElementById('drop' + num).classList.add('has-file');
+      checkReady();
+    };
+    reader.readAsBinaryString(file);
+  }
+
+  function checkReady() {
+    document.getElementById('btnCompare').disabled = !(data1 && data2);
+  }
+
+  // ── Drag and Drop ──
+  ['drop1','drop2'].forEach((id, idx) => {
+    const el = document.getElementById(id);
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('dragover'); });
+    el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.name.match(/\.(xlsx|xls)$/i)) return alert('xlsx/xls 파일만 지원합니다.');
+      const input = document.getElementById('file' + (idx+1));
+      // DataTransfer trick to set file input
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      handleFile(idx+1, input);
+    });
+  });
+
+  // ── Compare Logic ──
+  function runCompare() {
+    showStatus('loading', '비교 분석 중...');
+    document.getElementById('tableWrapper').style.display = 'none';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('btnDownload').disabled = true;
+
+    // Defer to allow UI repaint
+    setTimeout(() => {
+      try {
+        const headers = data1[0] || data2[0] || [];
+        const maxCols = Math.max(data1[0]?.length || 0, data2[0]?.length || 0);
+        const allHeaders = Array.from({ length: maxCols }, (_, i) => (data1[0] && data1[0][i] != null ? data1[0][i] : (data2[0] && data2[0][i] != null ? data2[0][i] : '')) );
+
+        // Build key→row map for original (data1), skip header
+        const map1 = new Map();
+        for (let i = 1; i < data1.length; i++) {
+          const key = String(data1[i][0] ?? '').trim();
+          if (key !== '') map1.set(key, data1[i]);
+        }
+
+        const results = [];
+
+        // Iterate data2 rows (skip header)
+        for (let i = 1; i < data2.length; i++) {
+          const row2 = data2[i];
+          const key = String(row2[0] ?? '').trim();
+          if (key === '') continue;
+
+          if (!map1.has(key)) {
+            // Added row
+            results.push({ type: 'added', row: row2, changedCols: [] });
+          } else {
+            const row1 = map1.get(key);
+            const changedCols = [];
+            const len = Math.max(row1.length, row2.length, maxCols);
+            for (let c = 0; c < len; c++) {
+              const v1 = String(row1[c] ?? '').trim();
+              const v2 = String(row2[c] ?? '').trim();
+              if (v1 !== v2) changedCols.push(c);
+            }
+            if (changedCols.length > 0) {
+              results.push({ type: 'changed', row: row2, changedCols });
+            }
+          }
+        }
+
+        compareResult = { headers: allHeaders, results };
+        renderTable(compareResult);
+        showStatus('', '');
+      } catch (err) {
+        showStatus('no-change', '오류: ' + err.message);
+      }
+    }, 50);
+  }
+
+  function renderTable({ headers, results }) {
+    const table = document.getElementById('resultTable');
+    table.innerHTML = '';
+
+    if (results.length === 0) {
+      showStatus('no-change', '✓ 변경 사항이 없습니다.');
+      return;
+    }
+
+    // Count
+    const addedCount = results.filter(r => r.type === 'added').length;
+    const changedCount = results.filter(r => r.type === 'changed').length;
+    document.getElementById('statAdded').textContent = `＋ 추가 ${addedCount}건`;
+    document.getElementById('statChanged').textContent = `≠ 변경 ${changedCount}건`;
+    document.getElementById('statsBar').style.display = 'flex';
+    showStatus('has-change', `총 ${results.length}건의 변경 사항이 발견되었습니다.`);
+
+    // Header row
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    ['상태', ...headers].forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
+    results.forEach(({ type, row, changedCols }) => {
+      const tr = document.createElement('tr');
+      if (type === 'added') tr.classList.add('row-added');
+
+      // Status badge
+      const tdStatus = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = type === 'added' ? 'badge badge-added' : 'badge badge-changed';
+      badge.textContent = type === 'added' ? '추가' : '변경';
+      tdStatus.appendChild(badge);
+      tr.appendChild(tdStatus);
+
+      // Data cells
+      for (let c = 0; c < headers.length; c++) {
+        const td = document.createElement('td');
+        td.textContent = row[c] ?? '';
+        if (type === 'added' || changedCols.includes(c)) {
+          td.classList.add('cell-highlight');
+        }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    document.getElementById('tableWrapper').style.display = 'block';
+    document.getElementById('btnDownload').disabled = false;
+  }
+
+  // ── Download ──
+  function downloadResult() {
+    if (!compareResult) return;
+    const { headers, results } = compareResult;
+
+    const wsData = [['상태', ...headers]];
+    results.forEach(({ type, row }) => {
+      wsData.push([type === 'added' ? '추가' : '변경', ...headers.map((_, i) => row[i] ?? '')]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Yellow fill style
+    const yellowFill = { patternType: 'solid', fgColor: { rgb: 'FFFF00' } };
+
+    results.forEach(({ type, changedCols }, ri) => {
+      const excelRow = ri + 2; // 1-indexed, row 1 is header
+      if (type === 'added') {
+        // Highlight entire row
+        for (let c = 0; c <= headers.length; c++) {
+          const addr = XLSX.utils.encode_cell({ r: excelRow - 1, c });
+          if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+          ws[addr].s = { fill: yellowFill };
+        }
+      } else {
+        // Highlight only changed cells (+1 offset for status column)
+        changedCols.forEach(c => {
+          const addr = XLSX.utils.encode_cell({ r: excelRow - 1, c: c + 1 });
+          if (!ws[addr]) ws[addr] = { v: '', t: 's' };
+          ws[addr].s = { fill: yellowFill };
+        });
+      }
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws, '비교결과');
+
+    const today = new Date();
+    const ymd = today.getFullYear().toString()
+      + String(today.getMonth()+1).padStart(2,'0')
+      + String(today.getDate()).padStart(2,'0');
+    XLSX.writeFile(wb, `비교결과_${ymd}.xlsx`);
+  }
+
+  // ── Status Helper ──
+  function showStatus(type, msg) {
+    const bar = document.getElementById('statusBar');
+    const spinner = document.getElementById('spinner');
+    const msgEl = document.getElementById('statusMsg');
+
+    bar.className = 'status-bar';
+    spinner.style.display = 'none';
+
+    if (!type || !msg) { bar.style.display = 'none'; return; }
+
+    bar.classList.add(type);
+    bar.style.display = 'flex';
+    if (type === 'loading') spinner.style.display = 'block';
+    msgEl.textContent = msg;
+  }
+
+  // ── Reset ──
+  function resetAll() {
+    data1 = null; data2 = null; compareResult = null;
+    ['1','2'].forEach(n => {
+      document.getElementById('drop'+n).classList.remove('has-file');
+      document.getElementById('name'+n).textContent = '';
+      document.getElementById('file'+n).value = '';
+    });
+    document.getElementById('resultTable').innerHTML = '';
+    document.getElementById('tableWrapper').style.display = 'none';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('btnCompare').disabled = true;
+    document.getElementById('btnDownload').disabled = true;
+    showStatus('', '');
+  }
+</script>
+
+</body>
+</html>
