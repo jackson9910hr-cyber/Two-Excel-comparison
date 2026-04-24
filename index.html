@@ -3,283 +3,339 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>XDiff — Excel Compare</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── TOKENS ── */
 :root {
-–navy:      #0f1f3d;
-–navy-lt:   #1a3260;
-–blue:      #1a56db;
-–blue-lt:   #3b7cf8;
-–blue-dim:  rgba(26,86,219,.08);
-–teal:      #0ea5c4;
-–amber:     #b45309;
-–amber-bg:  #fffbeb;
-–amber-bdr: #fbbf24;
-–green:     #047857;
-–green-bg:  #ecfdf5;
-–green-bdr: #6ee7b7;
-–surface:   #ffffff;
-–canvas:    #eef1f7;
-–bdr:       #dde2ed;
-–bdr2:      #c5ccd9;
-–t1: #0d1b33;
-–t2: #3d4f6b;
-–t3: #7a8ba8;
-–t4: #b0bdd0;
-–mono: ‘DM Mono’, monospace;
-–kr:   ‘Noto Sans KR’, sans-serif;
+/* System font stack — zero CDN dependency */
+–f: -apple-system, BlinkMacSystemFont, “Segoe UI”, “Helvetica Neue”,
+Arial, “Apple SD Gothic Neo”, “Malgun Gothic”, sans-serif;
+–fm: ui-monospace, “SF Mono”, “Cascadia Code”, Consolas, monospace;
+
+/* Palette — deep slate + electric blue */
+–bg:       #f1f4f9;
+–surface:  #ffffff;
+–surface2: #f7f9fc;
+–navy:     #0d1f3c;
+–navy2:    #162d52;
+–blue:     #1847c8;
+–blue2:    #2d5fe8;
+–blue-bg:  #eef2ff;
+–blue-bdr: #a5b4fc;
+–teal:     #0891b2;
+–green:    #065f46;
+–gbg:      #ecfdf5;
+–gbdr:     #86efac;
+–amber:    #92400e;
+–abg:      #fffbeb;
+–abdr:     #fbbf24;
+–bdr:      #e2e7f0;
+–bdr2:     #c9d0de;
+–t1:       #0d1b33;
+–t2:       #3a4a62;
+–t3:       #6b7a94;
+–t4:       #a8b5c8;
+
 –r: 8px;
 –r2: 12px;
-–shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
-–shadow-lg: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.1);
+–sh: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.07);
+–sh2: 0 2px 8px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.1);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-
+/* ── BASE ── */
 body {
-font-family: var(–kr);
-background: var(–canvas);
+font-family: var(–f);
+background: var(–bg);
 color: var(–t1);
-font-size: 13.5px;
+font-size: 14px;
 line-height: 1.6;
--webkit-font-smoothing: antialiased;
 min-height: 100vh;
+word-break: keep-all;
+-webkit-text-size-adjust: 100%;
 }
 
 /* ── TOPBAR ── */
 .topbar {
+position: sticky;
+top: 0;
+z-index: 100;
 background: var(–navy);
-height: 54px;
+height: 52px;
 display: flex;
 align-items: center;
 padding: 0 20px;
-gap: 0;
-position: sticky;
-top: 0;
-z-index: 200;
-box-shadow: 0 2px 12px rgba(0,0,0,.25);
+box-shadow: 0 2px 10px rgba(0,0,0,.3);
 }
-
 .brand {
 display: flex;
 align-items: center;
 gap: 10px;
 }
-.brand-mark {
-width: 30px; height: 30px;
+.brand-ico {
+width: 32px;
+height: 32px;
 background: var(–blue);
-border-radius: 6px;
-display: flex; align-items: center; justify-content: center;
-box-shadow: 0 0 0 3px rgba(255,255,255,.08);
+border-radius: 7px;
+display: flex;
+align-items: center;
+justify-content: center;
+flex-shrink: 0;
 }
-.brand-mark svg { width: 15px; height: 15px; fill: #fff; }
+.brand-ico svg { display: block; width: 16px; height: 16px; }
 .brand-name {
-font-family: var(–mono);
-font-size: 15px;
-font-weight: 500;
+font-family: var(–fm);
+font-size: 16px;
+font-weight: 600;
 color: #fff;
 letter-spacing: -.3px;
 }
-.brand-name em {
-font-style: normal;
+.brand-tag {
+font-family: var(–fm);
 font-size: 9px;
+font-weight: 600;
 letter-spacing: 1.5px;
-color: var(–teal);
-font-weight: 500;
+color: #38bdf8;
 vertical-align: super;
 margin-left: 2px;
+text-transform: uppercase;
 }
-
 .topbar-right {
 margin-left: auto;
 display: flex;
 align-items: center;
-gap: 8px;
+gap: 10px;
 }
-.topbar-org {
-font-family: var(–mono);
+.org-label {
+font-family: var(–fm);
 font-size: 10px;
 letter-spacing: .8px;
-color: rgba(255,255,255,.35);
+color: rgba(255,255,255,.32);
 text-transform: uppercase;
 }
-.topbar-ver {
-background: rgba(255,255,255,.07);
-border: 1px solid rgba(255,255,255,.1);
-border-radius: 4px;
+.ver-chip {
+background: rgba(255,255,255,.08);
+border: 1px solid rgba(255,255,255,.12);
+border-radius: 5px;
 padding: 2px 8px;
-font-family: var(–mono);
+font-family: var(–fm);
 font-size: 10px;
-color: rgba(255,255,255,.4);
-letter-spacing: .5px;
+color: rgba(255,255,255,.38);
+letter-spacing: .4px;
 }
 
 /* ── PAGE ── */
 .page {
-max-width: 900px;
+max-width: 860px;
 margin: 0 auto;
-padding: 28px 16px 60px;
+padding: 28px 16px 64px;
 }
 
-/* ── WORKFLOW ROW ── */
-.workflow {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 14px;
-margin-bottom: 16px;
+/* ── SECTION LABEL ── */
+.sec-label {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 12px;
 }
-@media (max-width: 560px) { .workflow { grid-template-columns: 1fr; } }
+.sec-num {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 20px;
+height: 20px;
+border-radius: 5px;
+background: var(–navy);
+color: #fff;
+font-family: var(–fm);
+font-size: 10px;
+font-weight: 700;
+flex-shrink: 0;
+transition: background .2s;
+}
+.sec-num.done { background: var(–green); }
+.sec-text {
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 1.5px;
+text-transform: uppercase;
+color: var(–t3);
+}
+.sec-line {
+flex: 1;
+height: 1px;
+background: var(–bdr);
+}
 
 /* ── CARD ── */
 .card {
 background: var(–surface);
 border: 1px solid var(–bdr);
 border-radius: var(–r2);
-box-shadow: var(–shadow);
+box-shadow: var(–sh);
 overflow: hidden;
+margin-bottom: 12px;
 }
-
-.card-header {
+.card-head {
 display: flex;
 align-items: center;
 gap: 10px;
-padding: 13px 16px;
+padding: 12px 16px;
 border-bottom: 1px solid var(–bdr);
-background: #f8fafd;
+background: var(–surface2);
 }
-.ch-icon {
-width: 28px; height: 28px;
-border-radius: 6px;
+.ch-ico {
+width: 30px;
+height: 30px;
+border-radius: 7px;
 background: var(–navy);
-display: flex; align-items: center; justify-content: center;
+display: flex;
+align-items: center;
+justify-content: center;
 flex-shrink: 0;
+transition: background .2s;
 }
-.ch-icon svg { width: 14px; height: 14px; fill: rgba(255,255,255,.9); }
-.ch-icon.done { background: var(–green); }
-
+.ch-ico svg { display: block; width: 14px; height: 14px; }
+.ch-ico.done { background: var(–green); }
+.ch-info {}
 .ch-title {
 font-size: 13px;
 font-weight: 700;
 color: var(–t1);
+line-height: 1.3;
 }
 .ch-sub {
 font-size: 11px;
 color: var(–t3);
-font-family: var(–mono);
-margin-top: 1px;
+font-family: var(–fm);
+line-height: 1.3;
 }
-
 .card-body { padding: 14px 16px; }
 
+/* ── FILE CARDS: 2-column on wide, 1-column on narrow ── */
+.file-row {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 12px;
+margin-bottom: 12px;
+}
+@media (max-width: 540px) {
+.file-row { grid-template-columns: 1fr; }
+}
+
 /* ── DROP ZONE ── */
-.drop-zone {
-border: 1.5px dashed var(–bdr2);
-border-radius: var(–r);
-padding: 16px;
-cursor: pointer;
+.dz {
 position: relative;
-transition: border-color .18s, background .18s, box-shadow .18s;
-background: #fafbfd;
-user-select: none;
+border: 2px dashed var(–bdr2);
+border-radius: var(–r);
+background: var(–surface2);
+cursor: pointer;
+transition: border-color .18s, background .18s;
+overflow: hidden;
+/* min-height prevents collapse before content loads */
+min-height: 80px;
 }
-.drop-zone input[type=file] {
-position: absolute; inset: 0;
-opacity: 0; cursor: pointer;
-width: 100%; height: 100%;
-font-size: 0; /* hide iOS camera/files label */
+/* Hide file input but keep it functional */
+.dz input[type=file] {
+position: absolute;
+top: 0; left: 0;
+width: 100%;
+height: 100%;
+opacity: 0;
+cursor: pointer;
+/* Override iOS styling */
+-webkit-appearance: none;
+font-size: 16px; /* prevents iOS zoom */
 }
-.drop-zone:hover,
-.drop-zone.drag-over {
-border-color: var(–blue);
-background: var(–blue-dim);
-box-shadow: 0 0 0 3px rgba(26,86,219,.12);
-}
-.drop-zone.loaded {
-border-color: var(–green-bdr);
-border-style: solid;
-background: var(–green-bg);
-}
+.dz:hover { border-color: var(–blue); background: var(–blue-bg); }
+.dz.drag { border-color: var(–blue2); background: var(–blue-bg); }
+.dz.ok   { border-color: var(–gbdr); border-style: solid; background: var(–gbg); }
 
 .dz-inner {
 display: flex;
 align-items: center;
 gap: 12px;
+padding: 14px;
 pointer-events: none;
 }
-.dz-file-icon {
-width: 38px; height: 46px;
+.dz-ico {
+width: 40px;
+height: 40px;
 flex-shrink: 0;
-position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
 }
-.dz-file-icon svg { width: 100%; height: 100%; }
-
-.dz-text .dz-prompt {
+.dz-ico svg { display: block; }
+.dz-texts {}
+.dz-prompt {
 font-size: 13px;
 font-weight: 600;
-color: var(–t1);
-margin-bottom: 2px;
+color: var(–t2);
+line-height: 1.3;
 }
-.dz-text .dz-ext {
-font-family: var(–mono);
+.dz-hint {
 font-size: 11px;
 color: var(–t3);
+font-family: var(–fm);
+margin-top: 2px;
+line-height: 1.4;
 }
-.drop-zone.loaded .dz-ext { display: none; }
-
-.dz-filename {
+.dz.ok .dz-hint { display: none; }
+.dz-fname {
 display: none;
-font-family: var(–mono);
 font-size: 11px;
 color: var(–green);
+font-family: var(–fm);
+margin-top: 3px;
 word-break: break-all;
 line-height: 1.5;
-margin-top: 2px;
 }
-.drop-zone.loaded .dz-filename { display: block; }
+.dz.ok .dz-fname { display: block; }
 
-/* ── ACTION CARD ── */
-.action-card {
-margin-bottom: 16px;
-}
-.action-inner {
+/* ── ACTION ROW ── */
+.action-row {
 display: flex;
-flex-direction: row;
-gap: 10px;
 flex-wrap: wrap;
+gap: 8px;
+align-items: center;
 }
 
+/* ── BUTTON ── */
 .btn {
-font-family: var(–kr);
-font-size: 13px;
-font-weight: 600;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 7px;
 padding: 11px 20px;
 border-radius: var(–r);
 border: none;
+font-family: var(–f);
+font-size: 13px;
+font-weight: 700;
 cursor: pointer;
-display: inline-flex;
-align-items: center;
-gap: 7px;
-transition: all .16s;
 white-space: nowrap;
-flex-shrink: 0;
+transition: all .15s;
+line-height: 1;
+-webkit-appearance: none;
 }
 .btn:active:not(:disabled) { transform: scale(.97); }
+.btn svg { flex-shrink: 0; display: block; }
 
 .btn-run {
 background: var(–blue);
 color: #fff;
-box-shadow: 0 2px 8px rgba(26,86,219,.3);
+box-shadow: 0 2px 8px rgba(24,71,200,.32);
 flex: 1;
-justify-content: center;
-min-width: 140px;
+min-width: 160px;
 }
 .btn-run:hover:not(:disabled) {
-background: var(–blue-lt);
-box-shadow: 0 4px 16px rgba(26,86,219,.4);
+background: var(–blue2);
+box-shadow: 0 4px 16px rgba(24,71,200,.42);
 transform: translateY(-1px);
 }
 .btn-run:disabled {
@@ -289,173 +345,175 @@ cursor: not-allowed;
 box-shadow: none;
 transform: none;
 }
-@keyframes pulse-b {
-0%,100% { box-shadow: 0 2px 8px rgba(26,86,219,.3); }
-50%      { box-shadow: 0 4px 22px rgba(26,86,219,.55); }
+@keyframes pulse {
+0%,100% { box-shadow: 0 2px 8px rgba(24,71,200,.32); }
+50%      { box-shadow: 0 4px 20px rgba(24,71,200,.55); }
 }
-.btn-run.ready { animation: pulse-b 2s ease-in-out infinite; }
+.btn-run.pulse { animation: pulse 2s ease-in-out infinite; }
 
 .btn-dl {
-background: var(–green-bg);
+background: var(–gbg);
 color: var(–green);
-border: 1px solid var(–green-bdr);
+border: 1px solid var(–gbdr);
+font-weight: 700;
 }
 .btn-dl:hover:not(:disabled) { background: #d1fae5; }
 .btn-dl:disabled { opacity: .35; cursor: not-allowed; }
 
-.btn-reset {
+.btn-rst {
 background: var(–surface);
 color: var(–t2);
 border: 1px solid var(–bdr);
 }
-.btn-reset:hover { background: var(–canvas); color: var(–t1); }
+.btn-rst:hover { background: var(–bg); }
 
-/* ── STATUS PILL ── */
-.status-pill {
+/* ── STATUS ── */
+.status {
 display: none;
-align-items: center;
+align-items: flex-start;
 gap: 8px;
 padding: 10px 14px;
 border-radius: var(–r);
-font-size: 12.5px;
-font-family: var(–kr);
+font-size: 13px;
+font-weight: 500;
 margin-top: 10px;
-line-height: 1.45;
-animation: fadeIn .2s ease;
+line-height: 1.5;
 }
-@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
-.status-pill.show { display: flex; }
-.status-pill.loading { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-.status-pill.ok      { background: var(–green-bg); border: 1px solid var(–green-bdr); color: var(–green); }
-.status-pill.warn    { background: var(–amber-bg); border: 1px solid var(–amber-bdr); color: var(–amber); }
-.status-pill.empty   { background: var(–canvas); border: 1px solid var(–bdr); color: var(–t2); }
+.status.on { display: flex; }
+.s-load { background: var(–blue-bg); border: 1px solid var(–blue-bdr); color: #1e40af; }
+.s-ok   { background: var(–gbg);    border: 1px solid var(–gbdr);     color: var(–green); }
+.s-warn { background: var(–abg);    border: 1px solid var(–abdr);     color: var(–amber); }
+.s-info { background: var(–bg);     border: 1px solid var(–bdr);      color: var(–t2); }
 
-.spinner {
-width: 13px; height: 13px; flex-shrink: 0;
-border: 2px solid #bfdbfe;
+.spin {
+width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px;
+border: 2px solid rgba(29,78,216,.25);
 border-top-color: var(–blue);
 border-radius: 50%;
-animation: spin .65s linear infinite;
+animation: sp .6s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes sp { to { transform: rotate(360deg); } }
 
-/* ── STATS ROW ── */
-.stats-row {
+/* ── STAT CARDS ── */
+.stat-row {
 display: none;
 grid-template-columns: 1fr 1fr;
-gap: 10px;
-margin-bottom: 16px;
+gap: 12px;
+margin-bottom: 12px;
 }
-.stats-row.show { display: grid; }
+.stat-row.on { display: grid; }
 
 .stat-card {
 background: var(–surface);
 border: 1px solid var(–bdr);
 border-radius: var(–r2);
-padding: 14px 16px;
-box-shadow: var(–shadow);
+padding: 16px;
+box-shadow: var(–sh);
 display: flex;
 align-items: center;
 gap: 12px;
 }
-.stat-icon {
-width: 36px; height: 36px;
-border-radius: 8px;
+.stat-ico {
+width: 40px; height: 40px;
+border-radius: 10px;
 display: flex; align-items: center; justify-content: center;
 flex-shrink: 0;
 }
-.si-amber { background: #fef3c7; }
-.si-blue  { background: #dbeafe; }
-.stat-icon svg { width: 16px; height: 16px; }
-
-.stat-body {}
-.stat-label {
+.si-a { background: #fef3c7; }
+.si-c { background: #dbeafe; }
+.stat-ico svg { display: block; width: 18px; height: 18px; }
+.stat-info {}
+.stat-lbl {
 font-size: 11px;
-color: var(–t3);
-font-family: var(–mono);
-letter-spacing: .3px;
+font-weight: 600;
+letter-spacing: .8px;
 text-transform: uppercase;
+color: var(–t3);
+line-height: 1;
+margin-bottom: 4px;
 }
-.stat-count {
-font-size: 22px;
+.stat-num {
+font-family: var(–fm);
+font-size: 26px;
 font-weight: 700;
-font-family: var(–mono);
-line-height: 1.2;
+line-height: 1;
 }
-.sc-amber { color: #92400e; }
-.sc-blue  { color: #1e40af; }
+.sn-a { color: #92400e; }
+.sn-c { color: #1e40af; }
 
-/* ── RESULT CARD ── */
-.result-card {
-display: none;
-margin-bottom: 16px;
-}
-.result-card.show { display: block; }
+/* ── RESULT TABLE ── */
+.result-card { display: none; margin-bottom: 12px; }
+.result-card.on { display: block; }
 
-.result-header {
+.rc-head {
 display: flex;
 align-items: center;
 gap: 10px;
-padding: 12px 16px;
+padding: 11px 16px;
 border-bottom: 1px solid var(–bdr);
-background: #f8fafd;
+background: var(–surface2);
 flex-wrap: wrap;
 }
-.rh-title {
+.rc-title {
 font-size: 13px;
 font-weight: 700;
 color: var(–t1);
 display: flex;
 align-items: center;
-gap: 7px;
+gap: 6px;
 }
-.rh-title svg { color: var(–t3); flex-shrink: 0; }
-.rh-tags {
+.rc-title svg { display: block; color: var(–t3); }
+.rc-tags {
 margin-left: auto;
 display: flex;
-gap: 6px;
+gap: 5px;
 flex-wrap: wrap;
 }
 .tag {
 display: inline-flex;
 align-items: center;
-padding: 2px 9px;
+padding: 2px 8px;
 border-radius: 4px;
-font-family: var(–mono);
+font-family: var(–fm);
 font-size: 10px;
-font-weight: 600;
-letter-spacing: .3px;
+font-weight: 700;
+letter-spacing: .4px;
 text-transform: uppercase;
+line-height: 1.6;
 }
-.tag-a { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.tag-c { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.ta { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.tc { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
 
-.table-scroll {
+.tbl-wrap {
 overflow-x: auto;
-max-height: 52vh;
+max-height: 50vh;
 overflow-y: auto;
+-webkit-overflow-scrolling: touch;
 }
-.table-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-.table-scroll::-webkit-scrollbar-track { background: #f0f2f6; }
-.table-scroll::-webkit-scrollbar-thumb { background: var(–bdr2); border-radius: 3px; }
+.tbl-wrap::-webkit-scrollbar { width: 5px; height: 5px; }
+.tbl-wrap::-webkit-scrollbar-track { background: var(–surface2); }
+.tbl-wrap::-webkit-scrollbar-thumb { background: var(–bdr2); border-radius: 3px; }
 
-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-
+table {
+width: 100%;
+border-collapse: collapse;
+font-size: 12.5px;
+}
 thead { position: sticky; top: 0; z-index: 5; }
 th {
 background: var(–navy);
-color: rgba(255,255,255,.55);
+color: rgba(255,255,255,.5);
 padding: 10px 13px;
 text-align: left;
-font-family: var(–mono);
+font-family: var(–fm);
 font-size: 10px;
-font-weight: 500;
+font-weight: 600;
 letter-spacing: 1px;
 text-transform: uppercase;
 white-space: nowrap;
-border-right: 1px solid rgba(255,255,255,.06);
+border-right: 1px solid rgba(255,255,255,.07);
 }
-th:first-child { color: rgba(255,255,255,.3); width: 68px; border-right: 1px solid rgba(255,255,255,.1); }
+th:first-child { color: rgba(255,255,255,.3); width: 64px; }
 th:last-child  { border-right: none; }
 
 td {
@@ -464,184 +522,159 @@ border-bottom: 1px solid var(–bdr);
 border-right: 1px solid var(–bdr);
 color: var(–t1);
 vertical-align: top;
-font-size: 12.5px;
-font-family: var(–kr);
+line-height: 1.5;
 }
 td:last-child { border-right: none; }
 tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: #f5f7ff; }
-
-tr.row-added td   { background: #fffdf5; }
-tbody tr.row-added:hover td { background: #fff8e1; }
+tbody tr:hover td { background: #f4f7ff; }
+tr.ra td { background: #fffdf5; }
+tbody tr.ra:hover td { background: #fff8e1; }
 td.hl { background: #fef9c3 !important; color: #78350f; font-weight: 600; }
-tr.row-added td.hl { background: #fde68a !important; color: #7c2d12; }
+tr.ra td.hl { background: #fde68a !important; color: #7c2d12; }
 
 .badge {
 display: inline-flex;
 align-items: center;
-padding: 2px 8px;
+padding: 2px 7px;
 border-radius: 4px;
-font-family: var(–mono);
+font-family: var(–fm);
 font-size: 10px;
 font-weight: 700;
 letter-spacing: .5px;
 text-transform: uppercase;
+line-height: 1.5;
 white-space: nowrap;
 }
-.badge-a { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-.badge-c { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.ba { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.bc { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
 
-.table-footer {
+.rc-foot {
 padding: 8px 14px;
 border-top: 1px solid var(–bdr);
-font-family: var(–mono);
+font-family: var(–fm);
 font-size: 11px;
 color: var(–t3);
-background: #f8fafd;
-display: flex;
-align-items: center;
-gap: 10px;
+background: var(–surface2);
 }
 
-/* ── GUIDE CARD ── */
-.guide-card {
+/* ── INFO CARD ── */
+.info-card {
 background: var(–surface);
 border: 1px solid var(–bdr);
 border-radius: var(–r2);
 padding: 16px;
-box-shadow: var(–shadow);
-}
-.guide-grid {
+box-shadow: var(–sh);
 display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 10px;
+grid-template-columns: 1fr 1fr 1fr;
+gap: 12px;
 }
-@media (max-width: 500px) { .guide-grid { grid-template-columns: 1fr; } }
-
-.guide-item {
-padding: 12px;
-background: #f8fafd;
-border: 1px solid var(–bdr);
-border-radius: var(–r);
-}
-.gi-label {
-font-family: var(–mono);
+@media (max-width: 480px) { .info-card { grid-template-columns: 1fr; } }
+.info-item {}
+.info-lbl {
 font-size: 10px;
+font-weight: 700;
 letter-spacing: 1px;
 text-transform: uppercase;
 color: var(–t3);
 margin-bottom: 4px;
 }
-.gi-val {
-font-size: 12px;
-color: var(–t2);
+.info-val {
+font-size: 12.5px;
 font-weight: 500;
+color: var(–t2);
+line-height: 1.5;
 }
 
-/* ── SECTION HEADING ── */
-.sec {
-font-family: var(–mono);
-font-size: 10px;
-font-weight: 500;
-letter-spacing: 2px;
-text-transform: uppercase;
-color: var(–t3);
-margin: 20px 0 10px;
-display: flex;
-align-items: center;
-gap: 8px;
-}
-.sec::after { content:’’; flex:1; height:1px; background:var(–bdr); }
-.sec-num {
-width: 18px; height: 18px;
-background: var(–navy);
-color: #fff;
-font-size: 9px;
-font-weight: 700;
-border-radius: 4px;
-display: flex; align-items: center; justify-content: center;
-flex-shrink: 0;
-}
-.sec-num.done { background: var(–green); }
+/* ── DIVIDER ── */
+.gap { height: 20px; }
 
 /* ── FOOTER ── */
-footer {
-text-align: center;
-padding: 20px;
+.footer {
+background: var(–surface);
 border-top: 1px solid var(–bdr);
-font-family: var(–mono);
+padding: 16px 20px;
+text-align: center;
+font-family: var(–fm);
 font-size: 10px;
 color: var(–t4);
 letter-spacing: 1px;
 text-transform: uppercase;
-background: var(–surface);
-margin-top: 20px;
+margin-top: 28px;
 }
 </style>
 
 </head>
 <body>
 
-<!-- TOP BAR -->
+<!-- ── TOP BAR ── -->
 
 <header class="topbar">
   <div class="brand">
-    <div class="brand-mark">
-      <svg viewBox="0 0 15 15"><rect x="1" y="2" width="13" height="2" rx="1"/><rect x="1" y="6.5" width="8" height="2" rx="1"/><rect x="1" y="11" width="13" height="2" rx="1"/></svg>
+    <div class="brand-ico">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="2.5" width="14" height="2" rx="1" fill="white"/>
+        <rect x="1" y="7" width="9" height="2" rx="1" fill="white" opacity=".7"/>
+        <rect x="1" y="11.5" width="14" height="2" rx="1" fill="white"/>
+      </svg>
     </div>
-    <span class="brand-name">XDiff<em>PRO</em></span>
+    <span class="brand-name">XDiff<span class="brand-tag">pro</span></span>
   </div>
   <div class="topbar-right">
-    <span class="topbar-org">Doosan Enerbility</span>
-    <span class="topbar-ver">v1.2</span>
+    <span class="org-label">Doosan Enerbility</span>
+    <span class="ver-chip">v1.3</span>
   </div>
 </header>
 
-<!-- PAGE -->
+<!-- ── PAGE ── -->
 
 <div class="page">
 
-  <!-- STEP 1 -->
+  <!-- STEP 1 : FILE UPLOAD -->
 
-  <div class="sec"><span class="sec-num" id="n1">1</span>파일 업로드</div>
+  <div class="sec-label">
+    <span class="sec-num" id="n1">1</span>
+    <span class="sec-text">파일 업로드</span>
+    <span class="sec-line"></span>
+  </div>
 
-  <div class="workflow">
+  <div class="file-row">
 
 ```
 <!-- File 1 -->
 <div class="card">
-  <div class="card-header">
-    <div class="ch-icon" id="icon1">
-      <svg viewBox="0 0 14 14"><path d="M2 1h7l3 3v9H2z"/><path d="M9 1v3h3" opacity=".5"/></svg>
+  <div class="card-head">
+    <div class="ch-ico" id="ico1">
+      <svg viewBox="0 0 14 16" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L8 1z" opacity=".9"/>
+        <path d="M8 1v5h5" fill="none" stroke="white" stroke-width="1.2" opacity=".6"/>
+      </svg>
     </div>
-    <div>
+    <div class="ch-info">
       <div class="ch-title">원본 파일</div>
       <div class="ch-sub">FILE 01 · 기준 데이터</div>
     </div>
   </div>
   <div class="card-body">
-    <div class="drop-zone" id="dz1">
-      <input type="file" id="f1" accept=".xlsx,.xls">
+    <div class="dz" id="dz1">
+      <input type="file" id="f1" accept=".xlsx,.xls" onchange="onFile(1,this)">
       <div class="dz-inner">
-        <!-- File SVG icon -->
-        <div class="dz-file-icon">
-          <svg viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="28" height="44" rx="3" fill="#f0f4ff" stroke="#c5ccd9" stroke-width="1.5"/>
-            <path d="M20 1 L20 12 L29 12" stroke="#c5ccd9" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-            <line x1="6" y1="19" x2="23" y2="19" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="24" x2="20" y2="24" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="29" x2="23" y2="29" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="34" x2="17" y2="34" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <!-- Excel X mark -->
-            <rect x="22" y="30" width="14" height="14" rx="3" fill="#1a56db"/>
-            <path d="M26 33.5l2.5 4m0-4L26 41.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M30.5 33.5L33 37.5m0-4L30.5 41.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+        <div class="dz-ico">
+          <!-- xlsx icon -->
+          <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x=".5" y=".5" width="27" height="43" rx="2.5" fill="#f0f4ff" stroke="#c9d0de"/>
+            <path d="M18 .5V11H28" stroke="#c9d0de" stroke-width="1.2" fill="none"/>
+            <rect x="1" y="17" width="18" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="21" width="14" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="25" width="18" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="29" width="11" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="20" y="29" width="15" height="14" rx="3" fill="#1847c8"/>
+            <text x="27.5" y="39.5" text-anchor="middle" font-family="monospace" font-size="6" font-weight="700" fill="white">XLS</text>
           </svg>
         </div>
-        <div class="dz-text">
-          <div class="dz-prompt">클릭 또는 드래그</div>
-          <div class="dz-ext">.xlsx / .xls 허용</div>
-          <div class="dz-filename" id="fn1">—</div>
+        <div class="dz-texts">
+          <div class="dz-prompt">클릭하여 파일 선택</div>
+          <div class="dz-hint">.xlsx / .xls · 드래그 가능</div>
+          <div class="dz-fname" id="fn1"></div>
         </div>
       </div>
     </div>
@@ -650,35 +683,38 @@ margin-top: 20px;
 
 <!-- File 2 -->
 <div class="card">
-  <div class="card-header">
-    <div class="ch-icon" id="icon2">
-      <svg viewBox="0 0 14 14"><path d="M2 1h7l3 3v9H2z"/><path d="M9 1v3h3" opacity=".5"/></svg>
+  <div class="card-head">
+    <div class="ch-ico" id="ico2">
+      <svg viewBox="0 0 14 16" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V6L8 1z" opacity=".9"/>
+        <path d="M8 1v5h5" fill="none" stroke="white" stroke-width="1.2" opacity=".6"/>
+      </svg>
     </div>
-    <div>
+    <div class="ch-info">
       <div class="ch-title">비교 대상 파일</div>
       <div class="ch-sub">FILE 02 · 변경 후 데이터</div>
     </div>
   </div>
   <div class="card-body">
-    <div class="drop-zone" id="dz2">
-      <input type="file" id="f2" accept=".xlsx,.xls">
+    <div class="dz" id="dz2">
+      <input type="file" id="f2" accept=".xlsx,.xls" onchange="onFile(2,this)">
       <div class="dz-inner">
-        <div class="dz-file-icon">
-          <svg viewBox="0 0 38 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="1" y="1" width="28" height="44" rx="3" fill="#f0f4ff" stroke="#c5ccd9" stroke-width="1.5"/>
-            <path d="M20 1 L20 12 L29 12" stroke="#c5ccd9" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-            <line x1="6" y1="19" x2="23" y2="19" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="24" x2="20" y2="24" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="29" x2="23" y2="29" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="6" y1="34" x2="17" y2="34" stroke="#a0b0cc" stroke-width="1.5" stroke-linecap="round"/>
-            <rect x="22" y="30" width="14" height="14" rx="3" fill="#0ea5c4"/>
-            <path d="M26 34h7M29.5 30.5v7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <div class="dz-ico">
+          <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x=".5" y=".5" width="27" height="43" rx="2.5" fill="#f0f4ff" stroke="#c9d0de"/>
+            <path d="M18 .5V11H28" stroke="#c9d0de" stroke-width="1.2" fill="none"/>
+            <rect x="1" y="17" width="18" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="21" width="14" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="25" width="18" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="1" y="29" width="11" height="1.5" rx=".75" fill="#a8b5c8"/>
+            <rect x="20" y="29" width="15" height="14" rx="3" fill="#0891b2"/>
+            <text x="27.5" y="39.5" text-anchor="middle" font-family="monospace" font-size="6" font-weight="700" fill="white">XLS</text>
           </svg>
         </div>
-        <div class="dz-text">
-          <div class="dz-prompt">클릭 또는 드래그</div>
-          <div class="dz-ext">.xlsx / .xls 허용</div>
-          <div class="dz-filename" id="fn2">—</div>
+        <div class="dz-texts">
+          <div class="dz-prompt">클릭하여 파일 선택</div>
+          <div class="dz-hint">.xlsx / .xls · 드래그 가능</div>
+          <div class="dz-fname" id="fn2"></div>
         </div>
       </div>
     </div>
@@ -686,267 +722,285 @@ margin-top: 20px;
 </div>
 ```
 
-  </div><!-- /workflow -->
+  </div><!-- /file-row -->
 
-  <!-- STEP 2 -->
+  <!-- STEP 2 : RUN -->
 
-  <div class="sec"><span class="sec-num" id="n2">2</span>실행</div>
+  <div class="sec-label">
+    <span class="sec-num" id="n2">2</span>
+    <span class="sec-text">실행</span>
+    <span class="sec-line"></span>
+  </div>
 
-  <div class="card action-card">
+  <div class="card" style="margin-bottom:0">
     <div class="card-body">
-      <div class="action-inner">
-        <button class="btn btn-run" id="btnRun" onclick="runCompare()" disabled>
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor"><polygon points="0,0 11,5.5 0,11"/></svg>
+      <div class="action-row">
+        <button class="btn btn-run" id="btnRun" onclick="run()" disabled>
+          <svg width="11" height="12" viewBox="0 0 11 12" fill="currentColor"><polygon points="0,0 11,6 0,12"/></svg>
           비교 분석 시작
         </button>
-        <button class="btn btn-dl" id="btnDl" onclick="downloadResult()" disabled>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="1" x2="6" y2="8"/><polyline points="3,5.5 6,8.5 9,5.5"/><line x1="1.5" y1="11" x2="10.5" y2="11"/></svg>
+        <button class="btn btn-dl" id="btnDl" onclick="download()" disabled>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6.5" y1="1" x2="6.5" y2="9"/><polyline points="3,6 6.5,9.5 10,6"/><line x1="1" y1="12" x2="12" y2="12"/></svg>
           결과 다운로드
         </button>
-        <button class="btn btn-reset" onclick="resetAll()">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6A4.5 4.5 0 1 1 4 2.2"/><polyline points="1,0.5 1,3 3.5,3"/></svg>
+        <button class="btn btn-rst" onclick="reset()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6A4.5 4.5 0 1 1 4 2"/><polyline points="0.5,0.5 0.5,3.5 3.5,3.5"/></svg>
           초기화
         </button>
       </div>
-      <div class="status-pill" id="statusPill">
-        <div class="spinner" id="spinner" style="display:none"></div>
-        <span id="statusMsg"></span>
+      <div class="status" id="status">
+        <div class="spin" id="spin" style="display:none"></div>
+        <span id="stMsg"></span>
       </div>
     </div>
   </div>
 
-  <!-- STEP 3 : STATS -->
+  <!-- STEP 3 : RESULT -->
 
-  <div class="stats-row" id="statsRow">
+  <div class="gap"></div>
+
+  <div class="stat-row" id="statRow">
     <div class="stat-card">
-      <div class="stat-icon si-amber">
-        <svg viewBox="0 0 16 16" fill="#d97706"><rect x="7" y="2" width="2" height="12" rx="1"/><rect x="2" y="7" width="12" height="2" rx="1"/></svg>
+      <div class="stat-ico si-a">
+        <svg viewBox="0 0 18 18" fill="#d97706"><rect x="8" y="2" width="2" height="14" rx="1"/><rect x="2" y="8" width="14" height="2" rx="1"/></svg>
       </div>
-      <div class="stat-body">
-        <div class="stat-label">추가된 행</div>
-        <div class="stat-count sc-amber" id="cntA">0</div>
+      <div class="stat-info">
+        <div class="stat-lbl">추가된 행</div>
+        <div class="stat-num sn-a" id="cntA">0</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon si-blue">
-        <svg viewBox="0 0 16 16" fill="none" stroke="#1a56db" stroke-width="2" stroke-linecap="round"><path d="M3 8h10M10 5l3 3-3 3"/></svg>
+      <div class="stat-ico si-c">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round"><path d="M3 9h12M11 5l4 4-4 4"/></svg>
       </div>
-      <div class="stat-body">
-        <div class="stat-label">변경된 행</div>
-        <div class="stat-count sc-blue" id="cntC">0</div>
+      <div class="stat-info">
+        <div class="stat-lbl">변경된 행</div>
+        <div class="stat-num sn-c" id="cntC">0</div>
       </div>
     </div>
   </div>
-
-  <!-- RESULT TABLE -->
 
   <div class="card result-card" id="resultCard">
-    <div class="result-header">
-      <div class="rh-title">
+    <div class="rc-head">
+      <div class="rc-title">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="1" y="1" width="12" height="12" rx="2"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="5" y1="5" x2="5" y2="13"/></svg>
-        비교 결과 테이블
+        비교 결과
       </div>
-      <div class="rh-tags" id="rhTags"></div>
+      <div class="rc-tags" id="rcTags"></div>
     </div>
-    <div class="table-scroll">
+    <div class="tbl-wrap">
       <table id="tbl"></table>
     </div>
-    <div class="table-footer" id="tblFoot"></div>
+    <div class="rc-foot" id="rcFoot"></div>
   </div>
 
-  <!-- GUIDE -->
+  <!-- INFO -->
 
-  <div class="sec"><span class="sec-num">i</span>비교 기준</div>
-  <div class="guide-card">
-    <div class="guide-grid">
-      <div class="guide-item">
-        <div class="gi-label">키 컬럼</div>
-        <div class="gi-val">A열 (첫 번째) 고유값</div>
-      </div>
-      <div class="guide-item">
-        <div class="gi-label">감지 항목</div>
-        <div class="gi-val">추가된 행 · 변경된 셀</div>
-      </div>
-      <div class="guide-item">
-        <div class="gi-label">제외 항목</div>
-        <div class="gi-val">삭제된 행 (원본에만 존재)</div>
-      </div>
+  <div class="sec-label">
+    <span class="sec-num" style="background:var(--t3);font-size:11px">i</span>
+    <span class="sec-text">비교 기준 안내</span>
+    <span class="sec-line"></span>
+  </div>
+
+  <div class="info-card">
+    <div class="info-item">
+      <div class="info-lbl">키 컬럼</div>
+      <div class="info-val">A열 (첫 번째) 고유 식별자</div>
+    </div>
+    <div class="info-item">
+      <div class="info-lbl">감지 항목</div>
+      <div class="info-val">추가된 행 · 값이 변경된 셀</div>
+    </div>
+    <div class="info-item">
+      <div class="info-lbl">제외 항목</div>
+      <div class="info-val">삭제된 행 (원본에만 존재)</div>
     </div>
   </div>
 
 </div><!-- /page -->
 
-<footer>Doosan Enerbility &nbsp;·&nbsp; Sourcing Team &nbsp;·&nbsp; XDiff v1.2</footer>
+<div class="footer">Doosan Enerbility · Sourcing Team · XDiff v1.3</div>
 
 <script>
-let d1 = null, d2 = null, result = null;
+'use strict';
+var d1 = null, d2 = null, res = null;
 
 /* ── Drop zones ── */
-[1, 2].forEach(n => {
-  const dz  = document.getElementById('dz' + n);
-  const inp = document.getElementById('f'  + n);
-
-  inp.addEventListener('change', () => inp.files[0] && loadFile(n, inp.files[0]));
-  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', ()  => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (!f || !/\.(xlsx|xls)$/i.test(f.name)) { alert('.xlsx / .xls 파일만 지원합니다.'); return; }
-    try { const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; } catch(e) {}
-    loadFile(n, f);
+[1, 2].forEach(function(n) {
+  var dz = document.getElementById('dz' + n);
+  dz.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function() { dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function(e) {
+    e.preventDefault(); dz.classList.remove('drag');
+    var f = e.dataTransfer.files[0];
+    if (!f) return;
+    if (!/\.(xlsx|xls)$/i.test(f.name)) { alert('.xlsx 또는 .xls 파일만 가능합니다.'); return; }
+    readFile(n, f);
   });
 });
 
-function loadFile(n, file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb   = XLSX.read(e.target.result, { type: 'binary' });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
-    if (n === 1) d1 = rows; else d2 = rows;
+function onFile(n, inp) {
+  if (inp.files && inp.files[0]) readFile(n, inp.files[0]);
+}
 
-    document.getElementById('dz' + n).classList.add('loaded');
+function readFile(n, file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var wb = XLSX.read(e.target.result, { type: 'binary' });
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+    if (n === 1) d1 = rows; else d2 = rows;
+    var dz = document.getElementById('dz' + n);
+    dz.classList.add('ok');
     document.getElementById('fn' + n).textContent = '✓ ' + file.name;
-    document.getElementById('icon' + n).classList.add('done');
+    document.getElementById('ico' + n).classList.add('done');
     checkReady();
   };
   reader.readAsBinaryString(file);
 }
 
 function checkReady() {
-  const btn = document.getElementById('btnRun');
-  const ok  = !!(d1 && d2);
+  var ok = !!(d1 && d2);
+  var btn = document.getElementById('btnRun');
   btn.disabled = !ok;
-  btn.classList.toggle('ready', ok);
-  if (ok) document.getElementById('n1').classList.add('done');
+  if (ok) {
+    btn.classList.add('pulse');
+    document.getElementById('n1').classList.add('done');
+  } else {
+    btn.classList.remove('pulse');
+  }
 }
 
 /* ── Compare ── */
-function runCompare() {
-  setStatus('loading', '비교 분석 중입니다...');
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('statsRow').classList.remove('show');
+function run() {
+  setStatus('load', '비교 분석 중입니다...');
+  document.getElementById('resultCard').classList.remove('on');
+  document.getElementById('statRow').classList.remove('on');
+  document.getElementById('rcTags').innerHTML = '';
   document.getElementById('btnDl').disabled = true;
-  document.getElementById('rhTags').innerHTML = '';
-  result = null;
+  res = null;
 
-  setTimeout(() => {
+  setTimeout(function() {
     try {
-      const maxCols = Math.max(d1[0]?.length || 0, d2[0]?.length || 0);
-      const headers = Array.from({ length: maxCols }, (_, i) =>
-        d1[0]?.[i] != null ? d1[0][i] : (d2[0]?.[i] ?? ''));
-
-      const map1 = new Map();
-      for (let i = 1; i < d1.length; i++) {
-        const k = String(d1[i][0] ?? '').trim();
-        if (k) map1.set(k, d1[i]);
+      var maxC = Math.max((d1[0] || []).length, (d2[0] || []).length);
+      var hdrs = [];
+      for (var i = 0; i < maxC; i++) {
+        hdrs.push(d1[0] && d1[0][i] != null ? d1[0][i] : (d2[0] && d2[0][i] != null ? d2[0][i] : ''));
       }
 
-      const rows = [];
-      for (let i = 1; i < d2.length; i++) {
-        const r2 = d2[i];
-        const k  = String(r2[0] ?? '').trim();
+      var map1 = {};
+      for (var i = 1; i < d1.length; i++) {
+        var k = String(d1[i][0] != null ? d1[i][0] : '').trim();
+        if (k) map1[k] = d1[i];
+      }
+
+      var rows = [];
+      for (var i = 1; i < d2.length; i++) {
+        var r2 = d2[i];
+        var k  = String(r2[0] != null ? r2[0] : '').trim();
         if (!k) continue;
-        if (!map1.has(k)) {
-          rows.push({ type: 'added', row: r2, diff: [] });
+        if (!map1[k]) {
+          rows.push({ type: 'a', row: r2, diff: [] });
         } else {
-          const r1 = map1.get(k), diff = [];
-          for (let c = 0; c < maxCols; c++) {
-            if (String(r1[c] ?? '').trim() !== String(r2[c] ?? '').trim()) diff.push(c);
+          var r1 = map1[k], diff = [];
+          for (var c = 0; c < maxC; c++) {
+            if (String(r1[c] != null ? r1[c] : '').trim() !== String(r2[c] != null ? r2[c] : '').trim()) diff.push(c);
           }
-          if (diff.length) rows.push({ type: 'changed', row: r2, diff });
+          if (diff.length) rows.push({ type: 'c', row: r2, diff: diff });
         }
       }
 
-      result = { headers, rows };
-      renderTable(result);
-    } catch (err) {
-      setStatus('empty', '오류: ' + err.message);
+      res = { hdrs: hdrs, rows: rows };
+      renderTable(res);
+    } catch(err) {
+      setStatus('info', '오류가 발생했습니다: ' + err.message);
     }
   }, 60);
 }
 
-function renderTable({ headers, rows }) {
+function renderTable(data) {
   document.getElementById('n2').classList.add('done');
 
-  if (!rows.length) {
-    setStatus('ok', '✓ 변경 사항이 없습니다. 두 파일이 동일합니다.');
+  if (!data.rows.length) {
+    setStatus('ok', '변경 사항이 없습니다. 두 파일의 데이터가 일치합니다.');
     return;
   }
 
-  const added   = rows.filter(r => r.type === 'added').length;
-  const changed = rows.filter(r => r.type === 'changed').length;
+  var added = 0, changed = 0;
+  data.rows.forEach(function(r) { if (r.type === 'a') added++; else changed++; });
 
   document.getElementById('cntA').textContent = added;
   document.getElementById('cntC').textContent = changed;
-  document.getElementById('statsRow').classList.add('show');
+  document.getElementById('statRow').classList.add('on');
 
-  const tags = document.getElementById('rhTags');
-  if (added)   tags.innerHTML += `<span class="tag tag-a">+${added} 추가</span>`;
-  if (changed) tags.innerHTML += `<span class="tag tag-c">≠${changed} 변경</span>`;
+  var tags = document.getElementById('rcTags');
+  if (added)   tags.innerHTML += '<span class="tag ta">+' + added + ' 추가</span>';
+  if (changed) tags.innerHTML += '<span class="tag tc">≠' + changed + ' 변경</span>';
 
-  setStatus('warn', `총 ${rows.length}건의 변경이 감지되었습니다.`);
+  setStatus('warn', '총 ' + data.rows.length + '건의 변경 사항이 감지되었습니다.');
 
   /* Build table */
-  const tbl = document.getElementById('tbl');
+  var tbl = document.getElementById('tbl');
   tbl.innerHTML = '';
 
-  const thead = tbl.createTHead();
-  const trh   = thead.insertRow();
-  ['상태', ...headers].forEach(h => {
-    const th = document.createElement('th');
-    th.textContent = h;
+  var thead = tbl.createTHead();
+  var trh = thead.insertRow();
+  var cols = ['상태'].concat(data.hdrs);
+  cols.forEach(function(h) {
+    var th = document.createElement('th');
+    th.textContent = h != null ? h : '';
     trh.appendChild(th);
   });
 
-  const tbody = tbl.createTBody();
-  rows.forEach(({ type, row, diff }) => {
-    const tr = tbody.insertRow();
-    if (type === 'added') tr.classList.add('row-added');
+  var tbody = tbl.createTBody();
+  data.rows.forEach(function(item) {
+    var tr = tbody.insertRow();
+    if (item.type === 'a') tr.classList.add('ra');
 
-    const tdB = tr.insertCell();
-    const bdg = document.createElement('span');
-    bdg.className = type === 'added' ? 'badge badge-a' : 'badge badge-c';
-    bdg.textContent = type === 'added' ? 'ADD' : 'MOD';
+    var tdB = tr.insertCell();
+    var bdg = document.createElement('span');
+    bdg.className = item.type === 'a' ? 'badge ba' : 'badge bc';
+    bdg.textContent = item.type === 'a' ? 'ADD' : 'MOD';
     tdB.appendChild(bdg);
 
-    for (let c = 0; c < headers.length; c++) {
-      const td = tr.insertCell();
-      td.textContent = row[c] ?? '';
-      if (type === 'added' || diff.includes(c)) td.classList.add('hl');
+    for (var c = 0; c < data.hdrs.length; c++) {
+      var td = tr.insertCell();
+      td.textContent = item.row[c] != null ? item.row[c] : '';
+      if (item.type === 'a' || item.diff.indexOf(c) !== -1) td.classList.add('hl');
     }
   });
 
-  document.getElementById('tblFoot').textContent =
-    `${rows.length}개 항목 표시 중  ·  추가 ${added}건  ·  변경 ${changed}건`;
+  document.getElementById('rcFoot').textContent =
+    data.rows.length + '개 항목  ·  추가 ' + added + '건  ·  변경 ' + changed + '건';
 
-  document.getElementById('resultCard').classList.add('show');
+  document.getElementById('resultCard').classList.add('on');
   document.getElementById('btnDl').disabled = false;
 }
 
 /* ── Download ── */
-function downloadResult() {
-  if (!result) return;
-  const { headers, rows } = result;
-  const aoa = [['상태', ...headers]];
-  rows.forEach(({ type, row }) =>
-    aoa.push([type === 'added' ? '추가' : '변경', ...headers.map((_, i) => row[i] ?? '')]));
+function download() {
+  if (!res) return;
+  var aoa = [['상태'].concat(res.hdrs)];
+  res.rows.forEach(function(item) {
+    aoa.push([item.type === 'a' ? '추가' : '변경'].concat(res.hdrs.map(function(_, i) {
+      return item.row[i] != null ? item.row[i] : '';
+    })));
+  });
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  const yf = { patternType: 'solid', fgColor: { rgb: 'FFFF00' } };
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  var yf = { patternType: 'solid', fgColor: { rgb: 'FFFF00' } };
 
-  rows.forEach(({ type, diff }, ri) => {
-    const r = ri + 1;
-    if (type === 'added') {
-      for (let c = 0; c <= headers.length; c++) {
-        const a = XLSX.utils.encode_cell({ r, c });
+  res.rows.forEach(function(item, ri) {
+    var r = ri + 1;
+    if (item.type === 'a') {
+      for (var c = 0; c <= res.hdrs.length; c++) {
+        var a = XLSX.utils.encode_cell({ r: r, c: c });
         if (!ws[a]) ws[a] = { v: '', t: 's' };
         ws[a].s = { fill: yf };
       }
     } else {
-      diff.forEach(c => {
-        const a = XLSX.utils.encode_cell({ r, c: c + 1 });
+      item.diff.forEach(function(c) {
+        var a = XLSX.utils.encode_cell({ r: r, c: c + 1 });
         if (!ws[a]) ws[a] = { v: '', t: 's' };
         ws[a].s = { fill: yf };
       });
@@ -954,42 +1008,43 @@ function downloadResult() {
   });
 
   XLSX.utils.book_append_sheet(wb, ws, '비교결과');
-  const d   = new Date();
-  const ymd = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
-  XLSX.writeFile(wb, `비교결과_${ymd}.xlsx`);
+  var d = new Date();
+  var ymd = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+  XLSX.writeFile(wb, '비교결과_' + ymd + '.xlsx');
 }
 
 /* ── Helpers ── */
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function setStatus(type, msg) {
-  const pill = document.getElementById('statusPill');
-  const spin = document.getElementById('spinner');
-  pill.className = 'status-pill';
-  spin.style.display = 'none';
+  var el = document.getElementById('status');
+  var sp = document.getElementById('spin');
+  el.className = 'status';
+  sp.style.display = 'none';
   if (!type) return;
-  pill.classList.add('show', type);
-  if (type === 'loading') spin.style.display = 'block';
-  document.getElementById('statusMsg').textContent = msg;
+  var map = { load: 's-load', ok: 's-ok', warn: 's-warn', info: 's-info' };
+  el.classList.add('on', map[type] || 's-info');
+  if (type === 'load') sp.style.display = 'block';
+  document.getElementById('stMsg').textContent = msg;
 }
 
-function resetAll() {
-  d1 = d2 = result = null;
-  [1, 2].forEach(n => {
-    document.getElementById('dz' + n).classList.remove('loaded', 'drag-over');
-    document.getElementById('fn' + n).textContent = '—';
+function reset() {
+  d1 = d2 = res = null;
+  [1, 2].forEach(function(n) {
+    document.getElementById('dz' + n).classList.remove('ok', 'drag');
+    document.getElementById('fn' + n).textContent = '';
     document.getElementById('f'  + n).value = '';
-    document.getElementById('icon' + n).classList.remove('done');
+    document.getElementById('ico' + n).classList.remove('done');
   });
   document.getElementById('tbl').innerHTML = '';
-  document.getElementById('rhTags').innerHTML = '';
-  document.getElementById('tblFoot').textContent = '';
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('statsRow').classList.remove('show');
-  ['n1', 'n2'].forEach(id => document.getElementById(id).classList.remove('done'));
-  const btn = document.getElementById('btnRun');
+  document.getElementById('rcTags').innerHTML = '';
+  document.getElementById('rcFoot').textContent = '';
+  document.getElementById('resultCard').classList.remove('on');
+  document.getElementById('statRow').classList.remove('on');
+  ['n1', 'n2'].forEach(function(id) { document.getElementById(id).classList.remove('done'); });
+  var btn = document.getElementById('btnRun');
   btn.disabled = true;
-  btn.classList.remove('ready');
+  btn.classList.remove('pulse');
   document.getElementById('btnDl').disabled = true;
   setStatus('', '');
 }
